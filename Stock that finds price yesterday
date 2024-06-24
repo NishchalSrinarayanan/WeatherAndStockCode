@@ -1,0 +1,25 @@
+import requests
+
+symbol = input("Enter Stock Symbol: ")
+
+api_key = "GTOFHBHOV60QAWEH"
+
+url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
+response = requests.get(url)
+
+data = response.json()
+
+price = float(data["Global Quote"]["05. price"])
+yest_price = float(data["Global Quote"]["08. previous close"])
+
+print(f"The price of this stock is {price} dollars.")
+
+diff = price - yest_price
+diff_better = f"{diff:.2f}"
+
+if diff > 0:
+    print(f"The stock price has increased by {diff_better} dollars since yesterday.")
+if diff < 0:
+    print(f"The stock price has decreased by {diff_better} dollars since yesterday.")
+else:
+    print("The stock price has remained the same since yesterday.")
