@@ -1,0 +1,140 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNRQXZxI227Ee/0ogxfQ8jp",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/NishchalSrinarayanan/WeatherAndStockCode/blob/main/sql%20table%20code%20(no%20graph)\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 4,
+      "metadata": {
+        "id": "VmK936FfFVG_"
+      },
+      "outputs": [],
+      "source": [
+        "import sqlite3\n",
+        "import requests\n",
+        "\n",
+        "\n",
+        "api_key = \"WFGXXTG1LQWDEUA2\"\n",
+        "symbol = \"IBM\"\n",
+        "\n",
+        "\n",
+        "url = f\"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}\"\n",
+        "data = requests.get(url).json()\n",
+        "\n",
+        "\n",
+        "time_series = data.get(\"Time Series (Daily)\", {})\n",
+        "\n",
+        "conn = sqlite3.connect(\"stocks.db\")\n",
+        "cursor = conn.cursor()\n",
+        "\n",
+        "\n",
+        "cursor.execute(\"\"\"\n",
+        "    CREATE TABLE stocks (\n",
+        "        date TEXT,\n",
+        "        open DECIMAL,\n",
+        "        high DECIMAL,\n",
+        "        low DECIMAL,\n",
+        "        close DECIMAL,\n",
+        "        volume DECIMAL\n",
+        "    )\n",
+        "\"\"\")\n",
+        "\n",
+        "for date, values in time_series.items():\n",
+        "    cursor.execute(\"\"\"\n",
+        "        INSERT INTO stocks (date, open, high, low, close, volume)\n",
+        "        VALUES (?, ?, ?, ?, ?, ?)\n",
+        "    \"\"\", (\n",
+        "        date,\n",
+        "        float(values[\"1. open\"]),\n",
+        "        float(values[\"2. high\"]),\n",
+        "        float(values[\"3. low\"]),\n",
+        "        float(values[\"4. close\"]),\n",
+        "        int(values[\"5. volume\"])\n",
+        "    ))\n",
+        "\n",
+        "# Commit and close connection\n",
+        "conn.commit()\n",
+        "conn.close()\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import sqlite3\n",
+        "import pandas as pd\n",
+        "\n",
+        "conn = sqlite3.connect(\"stocks.db\")\n",
+        "cursor = conn.cursor()\n",
+        "cursor.execute(\"SELECT * FROM stocks;\")\n",
+        "\n",
+        "# Fetch all data\n",
+        "data = cursor.fetchall()\n",
+        "\n",
+        "# Get column names\n",
+        "columns = [description[0] for description in cursor.description]\n",
+        "\n",
+        "# Create pandas DataFrame\n",
+        "df = pd.DataFrame(data, columns=columns)\n",
+        "\n",
+        "# Print the DataFrame (which displays as a table)\n",
+        "print(df)\n",
+        "\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "wrtvwf3OIVvO",
+        "outputId": "a7a024f0-6878-4889-fe5f-49e2c2fe8f65"
+      },
+      "execution_count": 8,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "          date    open     high      low   close   volume\n",
+            "0   2025-03-27  249.71  250.300  245.725  246.21  2889328\n",
+            "1   2025-03-26  251.25  254.320  249.530  250.34  4452220\n",
+            "2   2025-03-25  248.36  250.900  248.200  249.90  3133809\n",
+            "3   2025-03-24  247.31  248.820  245.965  248.45  4753331\n",
+            "4   2025-03-21  241.69  245.205  238.500  243.87  9580084\n",
+            "..         ...     ...      ...      ...     ...      ...\n",
+            "95  2024-11-06  213.48  214.330  210.370  213.60  3934386\n",
+            "96  2024-11-05  206.17  208.115  205.570  207.57  2441535\n",
+            "97  2024-11-04  207.65  207.700  205.800  206.32  2594119\n",
+            "98  2024-11-01  207.77  209.840  207.410  208.25  3334308\n",
+            "99  2024-10-31  204.13  208.130  203.510  206.72  5925250\n",
+            "\n",
+            "[100 rows x 6 columns]\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
